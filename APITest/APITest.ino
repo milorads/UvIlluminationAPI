@@ -1,15 +1,15 @@
-
 #include <Bridge.h>
 #include <YunServer.h>
 #include <YunClient.h>
+#include <Wire.h>
+
+int ledPIN= 8; // Led pin declaration
 
 int UVOUT = A0; //Output from the sensor
 int REF_3V3 = A1; //3.3V power on the Arduino board
 
 int BH1750_address = 0x23; // i2c Address for Illumination sensor
 byte buff[2];
-
-
 
 // Listen on default port 5555, the webserver on the Yun
 // will forward there all the HTTP requests for us.
@@ -53,12 +53,15 @@ void process(YunClient client) {
     uvCommand(client);
   }
 
-  if (command == "illumination") {
+  else if (command == "illumination") {
     illuminationCommand(client);
   }
 
-  if (command == "led") {
+  else if (command == "led") {
     ledCommand(client);
+  }
+  else{
+    writeError(client);  
   }
 }
 
@@ -77,6 +80,11 @@ void uvCommand(YunClient client) {
 
 void ledCommand(YunClient client) {
   
+  digitalWrite(ledPIN, HIGH);
+
+  client.println("For 5 seconds signaling the LED.");
+  delay(5000);
+  digitalWrite(ledPIN, HIGH);
 }
 
 void illuminationCommand(YunClient client) {
@@ -132,4 +140,7 @@ int averageAnalogRead(int pinToRead)
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max)
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+void writeError(YunClient client){
+    client.println("Wrong input.");
 }
