@@ -8,7 +8,7 @@ int ledPIN= 8; // Led pin declaration
 int UVOUT = A0; //Output from the sensor
 int REF_3V3 = A1; //3.3V power on the Arduino board
 
-int BH1750_address = 0x23; // i2c Address for Illumination sensor
+int BH1750_address = 0x23; // i2c Address for Illumination sensor (I2C on yun is on digital 2 and 3 pins scl/sda)
 byte buff[2];
 
 bool ledIndicator = false;
@@ -48,21 +48,16 @@ void loop() {
 }
 
 void process(YunClient client) {
-  // read the command
   String command = client.readStringUntil('/');
-  //illuminationCommand(client);
-//client.println("inside process");
+  command.trim();
   if (command.equals("uv")) {
-    client.println("inside uv");
     uvCommand(client);
   }
   else if (command == "illumination") {
-    client.println("inside illummination");
     illuminationCommand(client);
   }
 
   else if (command == "led") {
-    client.println("inside led");
     ledCommand(client);
   }
   else{
@@ -100,7 +95,6 @@ void ledCommand(YunClient client) {
 
 void illuminationCommand(YunClient client) {
     float valf=0;
-
   if(BH1750_Read(BH1750_address)==2){
     
     valf=((buff[0]<<8)|buff[1])/1.2;
@@ -108,7 +102,7 @@ void illuminationCommand(YunClient client) {
     if(valf<0)client.print("> 65535");
     else client.print((int)valf,DEC); 
     
-    client.println(" lx"); 
+    client.println(" lux"); 
   }
 }
 
@@ -153,6 +147,7 @@ float mapfloat(float x, float in_min, float in_max, float out_min, float out_max
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 void writeError(YunClient client, String command){
-    client.println("Wrong input.");
     client.println(command);
+    client.println("Wrong input.");
+    client.println("Possible methods of use: uv, illumination and led");
 }
