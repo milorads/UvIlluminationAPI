@@ -11,6 +11,8 @@ int REF_3V3 = A1; //3.3V power on the Arduino board
 int BH1750_address = 0x23; // i2c Address for Illumination sensor
 byte buff[2];
 
+bool ledIndicator = false;
+
 // Listen on default port 5555, the webserver on the Yun
 // will forward there all the HTTP requests for us.
 YunServer server;
@@ -48,20 +50,23 @@ void loop() {
 void process(YunClient client) {
   // read the command
   String command = client.readStringUntil('/');
-
-  if (command == "uv") {
+  //illuminationCommand(client);
+//client.println("inside process");
+  if (command.equals("uv")) {
+    client.println("inside uv");
     uvCommand(client);
   }
-
   else if (command == "illumination") {
+    client.println("inside illummination");
     illuminationCommand(client);
   }
 
   else if (command == "led") {
+    client.println("inside led");
     ledCommand(client);
   }
   else{
-    writeError(client);  
+    writeError(client, command);  
   }
 }
 
@@ -79,12 +84,18 @@ void uvCommand(YunClient client) {
 }
 
 void ledCommand(YunClient client) {
-  
-  digitalWrite(ledPIN, HIGH);
+  if(!ledIndicator){
+      digitalWrite(ledPIN, HIGH);
+      ledIndicator = !ledIndicator;
+    }
+    else{
+        digitalWrite(ledPIN, LOW);
+        ledIndicator = !ledIndicator;
+      }
 
-  client.println("For 5 seconds signaling the LED.");
-  delay(5000);
-  digitalWrite(ledPIN, HIGH);
+  client.print("Changed the state of the LED to: ");
+  if(ledIndicator){client.println("ON");}
+  else{client.println("OFF");}
 }
 
 void illuminationCommand(YunClient client) {
@@ -141,6 +152,7 @@ float mapfloat(float x, float in_min, float in_max, float out_min, float out_max
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-void writeError(YunClient client){
+void writeError(YunClient client, String command){
     client.println("Wrong input.");
+    client.println(command);
 }
